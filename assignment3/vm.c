@@ -318,9 +318,11 @@ copyuvm(pde_t *pgdir, uint sz)
     return 0;
   for(i = 0; i < sz; i += PGSIZE){
     if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
-      panic("copyuvm: pte should exist");
+      //panic("copyuvm: pte should exist");				//if not allc itws ok
+    	continue;
     if(!(*pte & PTE_P))
-      panic("copyuvm: page not present");
+     // panic("copyuvm: page not present");				//if not allc itws ok
+    	continue;
     pa = PTE_ADDR(*pte);
     flags = PTE_FLAGS(*pte);
     if((mem = kalloc()) == 0)
