@@ -47,12 +47,14 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
 {
   pde_t *pde;
   pte_t *pgtab;
-
+  
   pde = &pgdir[PDX(va)];
-  if(*pde & PTE_P){
+  
+  if(*pde & PTE_P){    
     pgtab = (pte_t*)p2v(PTE_ADDR(*pde));
   } else {
-    if(!alloc || (pgtab = (pte_t*)kalloc()) == 0)
+    
+    if(!alloc || (pgtab = (pte_t*)kalloc()) == 0)      
       return 0;
     // Make sure all those PTE_P bits are zero.
     memset(pgtab, 0, PGSIZE);
@@ -62,6 +64,12 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
     *pde = v2p(pgtab) | PTE_P | PTE_W | PTE_U;
   }
   return &pgtab[PTX(va)];
+}
+
+uint
+getOrCreatePTE(pde_t *pgdir, const void *va, int alloc)
+{
+    return (uint)walkpgdir(pgdir, va, alloc);
 }
 
 // Create PTEs for virtual addresses starting at va that refer to

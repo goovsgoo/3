@@ -13,6 +13,7 @@ struct gatedesc idt[256];
 extern uint vectors[];  // in vectors.S: array of 256 entry pointers
 struct spinlock tickslock;
 uint ticks;
+int TLBIndex = 0;
 
 void
 tvinit(void)
@@ -30,6 +31,18 @@ void
 idtinit(void)
 {
   lidt(idt, sizeof(idt));
+}
+
+// push page table entry to TLB (kpdgir)
+pte_t *
+pushToTLB(uint v_address)
+{
+   kfree(p2v(cpu->kpgdir[TLBIndex]));
+   cpu->kpgdir[TLBIndex] = 0;   
+   pte_t * k_pte = (pte_t *)getOrCreatePTE(cpu->kpgdir, (void*)v_address, 1);
+   TLBIndex++;
+   TLBIndex = TLBIndex % TLB_SIZE;
+   return k_pte;
 }
 
 //PAGEBREAK: 41
@@ -78,24 +91,26 @@ trap(struct trapframe *tf)
     lapiceoi();
     break;
   case T_PGFLT: ;
-    //from allocuvm in vm.c
-    char * mem;
-    uint a;
-    a = PGROUNDDOWN(rcr2()); //round the addr of page fault
-    mem = kalloc();
-
-    if(mem == 0){
-	cprintf("allocuvm out of memory\n");
-	cprintf("pid %d %s: trap %d err %d on cpu %d "
-	    "eip 0x%x addr 0x%x--kill proc\n",
-	    proc->pid, proc->name, tf->trapno, tf->err, cpu->id, tf->eip,
-	    rcr2());
-	proc->killed = 1;				//dont wait for allc!
-	return;
+    //from allocuvm in vm.c      
+    uint a = PGROUNDDOWN(rcr2()); //round the addr of page fault        
+    pte_t * u_pte = (pte_t *)getOrCreatePTE(proc->pgdir, (void*)rcr2(), 0);
+    if (!u_pte || !(*u_pte & PTE_P) ) {    
+	char * mem = kalloc();
+	if(mem == 0){
+	    cprintf("allocuvm out of memory\n");
+	    cprintf("pid %d %s: trap %d err %d on cpu %d "
+		"eip 0x%x addr 0x%x--kill proc\n",
+		proc->pid, proc->name, tf->trapno, tf->err, cpu->id, tf->eip,
+		rcr2());
+	    proc->killed = 1;				//dont wait for allc!
+	}
+	memset(mem, 0, PGSIZE);
+	mappages(proc->pgdir, (void *)a, PGSIZE, v2p(mem), PTE_W|PTE_U);
     }
-    memset(mem, 0, PGSIZE);
-    mappages(proc->pgdir, (void *)a, PGSIZE, v2p(mem), PTE_W|PTE_U);
-    return;
+    pte_t * k_pte = pushToTLB(a);
+    *k_pte = *u_pte;
+    
+    lapiceoi();
     break;
   //PAGEBREAK: 13
   default:

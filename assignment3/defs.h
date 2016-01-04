@@ -180,7 +180,7 @@ void            switchkvm(struct cpu*);
 int             copyout(pde_t*, uint, void*, uint);
 void            clearpteu(pde_t *, char *);
 int		mappages(pde_t *, void *, uint, uint, int);
-
+uint		getOrCreatePTE(pde_t *, const void *, int);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
