@@ -77,6 +77,26 @@ trap(struct trapframe *tf)
             cpu->id, tf->cs, tf->eip);
     lapiceoi();
     break;
+  case T_PGFLT: ;
+    //from allocuvm in vm.c
+    char * mem;
+    uint a;
+    a = PGROUNDDOWN(rcr2()); //round the addr of page fault
+    mem = kalloc();
+
+    if(mem == 0){
+	cprintf("allocuvm out of memory\n");
+	cprintf("pid %d %s: trap %d err %d on cpu %d "
+	    "eip 0x%x addr 0x%x--kill proc\n",
+	    proc->pid, proc->name, tf->trapno, tf->err, cpu->id, tf->eip,
+	    rcr2());
+	proc->killed = 1;				//dont wait for allc!
+	return;
+    }
+    memset(mem, 0, PGSIZE);
+    mappages(proc->pgdir, (void *)a, PGSIZE, v2p(mem), PTE_W|PTE_U);
+    return;
+    break;
   //PAGEBREAK: 13
   default:
     if(proc == 0 || (tf->cs&3) == 0){
@@ -85,29 +105,6 @@ trap(struct trapframe *tf)
               tf->trapno, cpu->id, tf->eip, rcr2());
       panic("trap");
     }
-
-
-    if(tf->trapno == T_PGFLT){											//tesk 2.
-       	//from allocuvm in vm.c
-       	char * mem;
-           uint a;
-           a = PGROUNDDOWN(rcr2()); //round the addr of page fault
-           mem = kalloc();
-
-           if(mem == 0){
-               cprintf("allocuvm out of memory\n");
-               cprintf("pid %d %s: trap %d err %d on cpu %d "
-                   "eip 0x%x addr 0x%x--kill proc\n",
-                   proc->pid, proc->name, tf->trapno, tf->err, cpu->id, tf->eip,
-                   rcr2());
-               proc->killed = 1;				//dont wait for allc!
-               return;
-           }
-           memset(mem, 0, PGSIZE);
-           mappages(proc->pgdir, (void *)a, PGSIZE, v2p(mem), PTE_W|PTE_U);
-           return;
-         }
-
 
     // In user space, assume process misbehaved.
     cprintf("pid %d %s: trap %d err %d on cpu %d "
