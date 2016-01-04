@@ -51,9 +51,10 @@ sys_sbrk(void)
   if(argint(0, &n) < 0)
     return -1;
   addr = proc->sz;
-  if(growproc(n) < 0)
-    return -1;
-  return addr;
+  proc->sz += n;	//we increase the sz which is the way we cheat the process that it got the enough resources.
+  //if(growproc(n) < 0)
+    //return -1;
+  return addr;  //we returned the origin memory address as the result and comment the page allocation call.
 }
 
 int
