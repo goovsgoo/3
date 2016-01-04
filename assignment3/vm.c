@@ -5,7 +5,7 @@
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
-#include "elf.h"
+#include "elf.h" 
 
 extern char data[];  // defined by kernel.ld
 struct segdesc gdt[NSEGS];
