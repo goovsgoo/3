@@ -47,12 +47,14 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
 {
   pde_t *pde;
   pte_t *pgtab;
-
+  
   pde = &pgdir[PDX(va)];
-  if(*pde & PTE_P){
+  
+  if(*pde & PTE_P){    
     pgtab = (pte_t*)p2v(PTE_ADDR(*pde));
   } else {
-    if(!alloc || (pgtab = (pte_t*)kalloc()) == 0)
+    
+    if(!alloc || (pgtab = (pte_t*)kalloc()) == 0)      
       return 0;
     // Make sure all those PTE_P bits are zero.
     memset(pgtab, 0, PGSIZE);
@@ -62,6 +64,28 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
     *pde = v2p(pgtab) | PTE_P | PTE_W | PTE_U;
   }
   return &pgtab[PTX(va)];
+}
+
+uint
+getOrCreatePTE(pde_t *pgdir, const void *va, int alloc)
+{
+    return (uint)walkpgdir(pgdir, va, alloc);
+}
+
+// deletes TLB entry <index>
+void
+deleteFromTLB(int index) {
+  uint va = cpu->TLB[index];
+  pde_t* pde = cpu->kpgdir + PDX(va);
+  //pte_t* pte = walkpgdir(cpu->kpgdir, (void*)va, 0);
+  
+  if (pde && *pde != 0 && (*pde & PTE_P) ) {
+	//cprintf("pte to delete is %d\n", *pde);
+	kfree(p2v(PTE_ADDR(*pde)));
+	*pde = 0;
+  }
+  cpu->TLB[index] = 0;
+  
 }
 
 // Create PTEs for virtual addresses starting at va that refer to
@@ -157,6 +181,12 @@ kvmalloc(struct cpu *c)
 void
 switchkvm(struct cpu *c)
 {
+
+  int i;
+  for (i=0; i<TLB_SIZE; i++) {
+      deleteFromTLB(i);
+  }
+  
   lcr3(v2p(c->kpgdir));   // switch to the kernel page table
 }
 
@@ -165,6 +195,12 @@ void
 switchuvm(struct proc *p)
 {
   pushcli();
+
+  int i;
+  for (i=0; i<TLB_SIZE; i++) {
+      deleteFromTLB(i);
+  }
+  
   cpu->gdt[SEG_TSS] = SEG16(STS_T32A, &cpu->ts, sizeof(cpu->ts)-1, 0);
   cpu->gdt[SEG_TSS].s = 0;
   cpu->ts.ss0 = SEG_KDATA << 3;
@@ -173,6 +209,8 @@ switchuvm(struct proc *p)
   if(p->pgdir == 0)
     panic("switchuvm: no pgdir");
   lcr3(v2p(p->pgdir));  // switch to new address space
+ // lcr3(v2p(cpu->kpgdir));
+  
   popcli();
 }
 

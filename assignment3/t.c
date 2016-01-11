@@ -111,5 +111,5 @@ main(int argc, char *argv[])
 	  printf(1, "\n*****TEST 6 ended*****");
 
 
-		return 0;
+	  exit();
 }

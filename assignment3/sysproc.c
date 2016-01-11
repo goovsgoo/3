@@ -61,7 +61,9 @@ sys_sbrk(void)
       else
       {
     	  //cprintf("test missed kernbase--------------------------\n");
-        proc->sz += n; //we increase the sz which is the way we cheat the process that it got the enough resources.
+    	  if(growproc(n) < 0)
+    	         return -1;
+        //proc->sz += n; //we increase the sz which is the way we cheat the process that it got the enough resources.
       }
     }
   else if (n < 0) //Reduce heap size by deallocating
@@ -72,6 +74,20 @@ sys_sbrk(void)
   return addr;  //we returned the origin memory address as the result and comment the page allocation call.
 }
 
+
+//int
+// sys_sbrk(void)
+// {
+//   int addr;
+//   int n;
+//
+//   if(argint(0, &n) < 0)
+//     return -1;
+//   addr = proc->sz;
+//   if(growproc(n) < 0)
+//     return -1;
+//   return addr;
+// }
 
 
 int

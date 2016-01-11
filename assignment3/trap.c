@@ -13,6 +13,7 @@ struct gatedesc idt[256];
 extern uint vectors[];  // in vectors.S: array of 256 entry pointers
 struct spinlock tickslock;
 uint ticks;
+int TLBIndex = 0;
 
 void
 tvinit(void)
@@ -32,12 +33,28 @@ idtinit(void)
   lidt(idt, sizeof(idt));
 }
 
+// push page table entry to TLB (kpdgir)
+pte_t *
+pushToTLB(uint v_address)
+{
+
+   deleteFromTLB(TLBIndex);
+   
+   cpu->TLB[TLBIndex] = v_address;
+   //cprintf("After: address in TLB %d is: %d\n", TLBIndex, cpu->TLB[TLBIndex]);
+   
+   pte_t * k_pte = (pte_t *)getOrCreatePTE(cpu->kpgdir, (void*)v_address, 1);
+   TLBIndex++;
+   TLBIndex = TLBIndex % TLB_SIZE;
+   return k_pte;
+}
+
 //PAGEBREAK: 41
 void
 trap(struct trapframe *tf)
 {
 
-	uint* Vadd=0;
+	//uint* Vadd=0;
 
   if(tf->trapno == T_SYSCALL){
     if(proc->killed)
@@ -80,8 +97,7 @@ trap(struct trapframe *tf)
             cpu->id, tf->cs, tf->eip);
     lapiceoi();
     break;
-  case T_PGFLT: ;
-
+  case T_PGFLT:
   	  if (tf->err == 7){
 		  cprintf("pid %d %s: trap %d err %d on cpu %d "
 				  "eip 0x%x addr 0x%x--kill proc\n",
@@ -91,27 +107,31 @@ trap(struct trapframe *tf)
 		  break;
      }
 
-  	 Vadd=(uint*)rcr2();
-  	 if ((uint)Vadd<=proc->sz && (uint)Vadd<=KERNBASE){
-		//from allocuvm in vm.c
-		char * mem;
-		uint a;
-		a = PGROUNDDOWN(rcr2()); //round the addr of page fault
-		mem = kalloc();
-
-		if(mem == 0){
-			cprintf("allocuvm out of memory\n");
-			//cprintf("pid %d %s: trap %d err %d on cpu %d "
-				//"eip 0x%x addr 0x%x--kill proc\n",
-				//proc->pid, proc->name, tf->trapno, tf->err, cpu->id, tf->eip,
-				//rcr2());
-			proc->killed = 1;				//dont wait for allc!
-			return;
+    uint va = (uint)rcr2();
+    if(va <= proc->sz && va <= KERNBASE){
+		uint a = PGROUNDDOWN(rcr2()); //round the addr of page fault
+		pte_t * u_pte = (pte_t *)getOrCreatePTE(proc->pgdir, (uint*)rcr2(), 0);
+		//cprintf("u_pte %d\n", *u_pte);
+		if (!u_pte || !(*u_pte & PTE_P) ) {
+			//cprintf("lazy allocating page in uvm\n");
+			char * mem = kalloc();
+			if(mem == 0){
+				cprintf("allocuvm out of memory\n");
+				proc->killed = 1;				//dont wait for allc!
+				return;
+			}
+			memset(mem, 0, PGSIZE);
+			if(mappages(proc->pgdir, (void *)a, PGSIZE, v2p(mem), PTE_W|PTE_U)<0) {
+				cprintf("mappages faild\n");
+				proc->killed=1;
+			}
+			u_pte = (pte_t *)getOrCreatePTE(proc->pgdir, (void*)rcr2(), 0);
 		}
-		memset(mem, 0, PGSIZE);
-		if(mappages(proc->pgdir, (void *)a, PGSIZE, v2p(mem), PTE_W|PTE_U)<0)
-			proc->killed=1;
-		break;
+		pte_t * k_pte = pushToTLB(rcr2());
+		*k_pte = *u_pte;
+		//cprintf("last line in pagefualt \n");
+	    lapiceoi();
+	    break;
 	}
 
   //PAGEBREAK: 13

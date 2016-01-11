@@ -144,6 +144,9 @@ struct segdesc {
 #define PTE_ADDR(pte)   ((uint)(pte) & ~0xFFF)
 #define PTE_FLAGS(pte)  ((uint)(pte) &  0xFFF)
 
+// TLB managed by software
+#define TLB_SIZE         2   // Bits must be zero
+
 #ifndef __ASSEMBLER__
 typedef uint pte_t;
 
