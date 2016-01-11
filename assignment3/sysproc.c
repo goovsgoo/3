@@ -50,12 +50,29 @@ sys_sbrk(void)
 
   if(argint(0, &n) < 0)
     return -1;
-  addr = proc->sz;
-  proc->sz += n;	//we increase the sz which is the way we cheat the process that it got the enough resources.
-  //if(growproc(n) < 0)
-    //return -1;
+  addr=proc->sz;
+
+  if(n >= 0)
+    {
+      if (proc->sz + n >= KERNBASE){ //not allow a process to request virtual addresses that belong kernel
+
+        return -1;
+      }
+      else
+      {
+    	  //cprintf("test missed kernbase--------------------------\n");
+        proc->sz += n; //we increase the sz which is the way we cheat the process that it got the enough resources.
+      }
+    }
+  else if (n < 0) //Reduce heap size by deallocating
+   {
+     if(growproc(n) < 0)
+       return -1;
+   }
   return addr;  //we returned the origin memory address as the result and comment the page allocation call.
 }
+
+
 
 int
 sys_sleep(void)

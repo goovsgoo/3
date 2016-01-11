@@ -146,7 +146,24 @@ main(void)
 {
   static char buf[100];
   int fd;
-  
+  ////////////////////////////////////////////////////////////////////////////
+  /*buf[0]='u';
+  buf[1]='s';
+  buf[2]='e';
+  buf[3]='r';
+  buf[4]='t';
+  buf[5]='e';
+  buf[6]='s';
+  buf[7]='t';
+  buf[8]='s';
+  printf(1, "Please wait......\n");
+  		if (!fork()) { // child process
+  			runcmd(parsecmd(buf));
+  			exit();
+  		}
+  		wait();
+  		printf(1, "test end\n");*/
+  ///////////////////////////////////////////////////////////////////////////////
   // Assumes three file descriptors open.
   while((fd = open("console", O_RDWR)) >= 0){
     if(fd >= 3){

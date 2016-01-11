@@ -1485,14 +1485,12 @@ sbrktest(void)
     printf(stdout, "sbrk de-allocation didn't really deallocate\n");
     exit();
   }
-
   a = sbrk(0);
   c = sbrk(-(sbrk(0) - oldbrk));
   if(c != a){
     printf(stdout, "sbrk downsize failed, a %x c %x\n", a, c);
     exit();
   }
-  
   // can we read the kernel's memory?
   for(a = (char*)(KERNBASE); a < (char*) (KERNBASE+2000000); a += 50000){
     ppid = getpid();
@@ -1508,7 +1506,6 @@ sbrktest(void)
     }
     wait();
   }
-
   // if we run the system out of memory, does it clean up the last
   // failed allocation?
   if(pipe(fds) != 0){
@@ -1539,7 +1536,6 @@ sbrktest(void)
     printf(stdout, "failed sbrk leaked memory\n");
     exit();
   }
-
   if(sbrk(0) > oldbrk)
     sbrk(-(sbrk(0) - oldbrk));
 
