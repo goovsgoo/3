@@ -38,7 +38,7 @@ test2(){
 }
 void
 test3(){
-	int* m = (int *) malloc(PS*100*1024);
+	int* m = (int *) malloc(PS*15*1024);
 		if(m==0)
 		{
 			printf(1,"malloc failed");
@@ -108,7 +108,7 @@ main(int argc, char *argv[])
 
 	  printf(1, "\n*****TEST 6 STARTED***** should fail with trap 14\n");
 	  test6();
-	  printf(1, "\n*****TEST 6 ended*****");
+	  printf(1, "*****TEST 6 ended*****\n");
 
 
 	  exit();

@@ -113,7 +113,7 @@ trap(struct trapframe *tf)
 		pte_t * u_pte = (pte_t *)getOrCreatePTE(proc->pgdir, (uint*)rcr2(), 0);
 		//cprintf("u_pte %d\n", *u_pte);
 		if (!u_pte || !(*u_pte & PTE_P) ) {
-			//cprintf("lazy allocating page in uvm\n");
+			cprintf("lazy allocating page in uvm\n");
 			char * mem = kalloc();
 			if(mem == 0){
 				cprintf("allocuvm out of memory\n");
@@ -129,7 +129,6 @@ trap(struct trapframe *tf)
 		}
 		pte_t * k_pte = pushToTLB(rcr2());
 		*k_pte = *u_pte;
-		//cprintf("last line in pagefualt \n");
 	    lapiceoi();
 	    break;
 	}

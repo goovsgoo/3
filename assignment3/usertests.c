@@ -433,26 +433,22 @@ mem(void)
   printf(1, "mem test\n");
   ppid = getpid();
   if((pid = fork()) == 0){
-	printf(1, "while 0\n");
     m1 = 0;
     while((m2 = malloc(10001)) != 0){
       *(char**)m2 = m1;
       m1 = m2;
     }
-    printf(1, "while 1\n");
     while(m1){
       m2 = *(char**)m1;
       free(m1);
       m1 = m2;
     }
-    printf(1, "while 2\n");
     m1 = malloc(1024*20);
     if(m1 == 0){
       printf(1, "couldn't allocate mem?!!\n");
       kill(ppid);
       exit();
     }
-    printf(1, "while 3\n");
     free(m1);
     printf(1, "mem ok\n");
     exit();
@@ -1493,7 +1489,6 @@ sbrktest(void)
     printf(stdout, "sbrk downsize failed, a %x c %x\n", a, c);
     exit();
   }
-  printf(stdout, "6\n");
   // can we read the kernel's memory?
   for(a = (char*)(KERNBASE); a < (char*) (KERNBASE+2000000); a += 50000){
 	ppid = getpid();
@@ -1503,13 +1498,10 @@ sbrktest(void)
       exit();
     }
     if(pid == 0){
-      printf(stdout, "a:%x\n",a);
       printf(stdout, "oops could read %x = %x\n", a, *a);
-      printf(stdout, "after\n");
       kill(ppid);
       exit();
     }
-    printf(stdout, "go to wait\n");
     wait();
   }
   // if we run the system out of memory, does it clean up the last
@@ -1538,7 +1530,6 @@ sbrktest(void)
     kill(pids[i]);
     wait();
   }
-  printf(stdout, "9\n");
   if(c == (char*)0xffffffff){
     printf(stdout, "failed sbrk leaked memory\n");
     exit();
@@ -1717,16 +1708,16 @@ main(int argc, char *argv[])
   }
   close(open("usertests.ran", O_CREATE));
 
-//  createdelete();
-//  linkunlink();
-//  concreate();
-//  fourfiles();
-//  sharedfd();
-//
-//  bigargtest();
-//  bigwrite();
-//  bigargtest();
-//  bsstest();
+  createdelete();
+  linkunlink();
+  concreate();
+  fourfiles();
+  sharedfd();
+
+  bigargtest();
+  bigwrite();
+  bigargtest();
+  bsstest();
   sbrktest();
   validatetest();
 
@@ -1739,7 +1730,7 @@ main(int argc, char *argv[])
   exitiputtest();
   iputtest();
 
-  mem();
+  //mem();
   pipe1();
   preempt();
   exitwait();

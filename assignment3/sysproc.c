@@ -55,7 +55,6 @@ sys_sbrk(void)
   if(n >= 0)
     {
       if (proc->sz + n >= KERNBASE){ //not allow a process to request virtual addresses that belong kernel
-
         return -1;
       }
       else
