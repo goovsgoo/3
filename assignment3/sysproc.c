@@ -60,9 +60,9 @@ sys_sbrk(void)
       else
       {
     	  //cprintf("test missed kernbase--------------------------\n");
-    	  if(growproc(n) < 0)
-    	         return -1;
-        //proc->sz += n; //we increase the sz which is the way we cheat the process that it got the enough resources.
+//    	  if(growproc(n) < 0)
+//    	         return -1;
+        proc->sz += n; //we increase the sz which is the way we cheat the process that it got the enough resources.
       }
     }
   else if (n < 0) //Reduce heap size by deallocating

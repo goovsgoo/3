@@ -98,6 +98,7 @@ trap(struct trapframe *tf)
     lapiceoi();
     break;
   case T_PGFLT:
+	 // if (rcr2() < PGROUNDDOWN(tf->esp) && rcr2() > PGROUNDDOWN(PGROUNDDOWN(tf->esp)-PGSIZE+1))
   	  if (tf->err == 7){
 		  cprintf("pid %d %s: trap %d err %d on cpu %d "
 				  "eip 0x%x addr 0x%x--kill proc\n",

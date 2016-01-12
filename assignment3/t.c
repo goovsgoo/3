@@ -38,7 +38,7 @@ test2(){
 }
 void
 test3(){
-	int* m = (int *) malloc(PS*15*1024);
+	int* m = (int *) malloc(PS*100*1024);
 		if(m==0)
 		{
 			printf(1,"malloc failed");
